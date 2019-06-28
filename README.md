@@ -1,2 +1,4 @@
-# gnm-half-day-course
-Half-day version of the gnm course
+# gnm Half-Day Course
+
+Course materials for a one day introduction to generalized nonlinear models using the gnm R packages, given as part of the [useR! 2019](http://www.user2019.fr/tutorials/), July 9, 2019.
+

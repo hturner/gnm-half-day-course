@@ -1,0 +1,13 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+figure/*
+*.tex
+*.bbl
+*.log
+*.nav
+*.snm
+*.synctex.gz
+*.toc
+*.vrb

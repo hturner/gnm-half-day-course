@@ -1,0 +1,1095 @@
+
+\documentclass[beamer,xcolor=dvipsnames]{beamer} %ForestGreen
+%\documentclass[handout,mathserif,xcolor=dvipsnames]{beamer}
+%\definecolor{beamerblue}{rgb}{.2, .2, .7}
+%\hypersetup{
+%  colorlinks,%
+%  linkcolor = beamerblue,
+%  urlcolor = beamerblue,
+%}
+
+\setbeamertemplate{navigation symbols}{}
+% make text just a little wider
+\setbeamersize{text margin left = 16pt,text margin right = 16pt}
+
+\usepackage[T1]{fontenc} % for < and >
+%\usepackage[expert,altbullet,seriftt]{lucidabr}
+
+\usepackage{alltt}
+\usepackage{amsmath}
+\usepackage[english]{babel}
+\usepackage[round,authoryear]{natbib}
+
+\input mymacros
+
+%% The next few definitions from "Writing Vignettes for Bioconductor Packages"
+%% by R Gentleman
+\newcommand{\Robject}[1]{{\texttt{#1}}}
+\newcommand{\Rfunction}[1]{\textcolor[rgb]{0.69,0.353,0.396}{\texttt{#1}}}
+\newcommand{\Rpackage}[1]{{\textbf{#1}}}
+\newcommand{\Rclass}[1]{\textcolor[rgb]{0.192,0.494,0.8}{\texttt{"#1"}}}
+\newcommand{\Rmethod}[1]{{\texttt{#1}}}
+\newcommand{\Rfunarg}[1]{\textcolor[rgb]{0.333,0.667,0.333}{\texttt{#1}}}
+\newcommand{\Rcode}[1]{{\texttt{#1}}}
+
+\renewcommand{\emph}[1]{{\color{teal} \textit{#1}}}
+
+\DeclareFontShape{OT1}{cmtt}{bx}{n}{<5><6><7><8><9><10><10.95><12><14.4><17.28><20.74><24.88>cmttb10}{}
+\newcommand{\hi}[1]{{\color{red} \textbf{#1}}}
+
+\newcommand{\gnmO}{{\emph{GnmR}}}
+
+\newcommand{\bm}[1]{\boldsymbol{#1}}
+
+\newcommand{\mytilde}{\raise.17ex\hbox{$\scriptstyle\mathtt{\thicksim}$}}
+
+\parskip 4pt
+
+\mode<beamer>
+{
+  \usetheme{Montpellier}
+  \usecolortheme{dolphin}
+  \setbeamercovered{transparent}
+}
+
+\mode<handout>
+{
+  \usetheme{Montpellier}
+  \usecolortheme{dove}
+  \setbeamercovered{transparent}
+}
+
+% page numbers:
+% http://tex.stackexchange.com/questions/137022/how-to-insert-page-number-in-beamer-navigation-bars
+
+% can put page numbers in bottom right...
+%addtobeamertemplate{navigation symbols}{}{ \hspace{1em}    \usebeamerfont{footline}%
+ %  \insertframenumber / \inserttotalframenumber }
+
+% or top right...
+\expandafter\def\expandafter\insertshorttitle\expandafter{%
+ \insertshorttitle\hfill%
+ \insertframenumber\,/\,\inserttotalframenumber}
+
+
+
+
+\usepackage[english]{babel}
+
+\usepackage[latin1]{inputenc}
+
+
+\title[]
+{Generalized Nonlinear Models\\using the gnm Package}
+
+\author
+{Heather Turner}
+
+\institute[University of Warwick]
+{
+  \small
+  Independent statistical/R consultant\\
+  Department of Statistics, University of Warwick, UK
+}
+
+\date
+{Toulouse, 2019--07--09\\
+\ \null\\
+{\tiny\emph{Copyright \copyright\ {Heather Turner 2019}}}}
+
+
+
+\begin{document}
+
+%% use knitr!!
+<<setup, include = FALSE>>=
+library(knitr)
+opts_chunk$set(fig.path = 'figure/beamer-', fig.align = 'center',
+               fig.show = 'hold', size = 'footnotesize')
+## markup inline code http://stackoverflow.com/a/16406120/173755
+knit_hooks$set(inline = function(x) {
+  if (is.numeric(x)) return(knitr:::format_sci(x, 'latex'))
+  highr:::hi_latex(x)
+})
+# make the printing fit on the page
+options(width = 70, digits = 3, show.signif.stars=FALSE)
+par(mar = c(4, 4, .1, .1)) # reduce space above/below plots
+set.seed(1121)   # make the results repeatable
+library(gnm)
+@
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\title{Introduction to Generalized Nonlinear Models}
+
+\section{Preface}
+
+\frame{
+\frametitle{Preface}
+Generalized linear models (logit/probit regression, log-linear models, etc.)
+are now part of the standard empirical toolkit.
+
+Sometimes the assumption of a \emph{linear} predictor is unduly restrictive.
+
+This short course shows how \emph{generalized nonlinear models} may be viewed
+as a unified class, and how to work with such models in R.
+}
+
+\frame{
+  \nameslide{outline}
+  \frametitle{Part I: Introduction to Generalized Nonlinear Models in R}
+  \tableofcontents[part=1]
+}
+
+\frame{
+  \nameslide{outline}
+  \frametitle{Part II: Further Examples of Generalized Nonlinear Models}
+  \tableofcontents[part=2]
+}
+
+\title{Overview of Generalized Nonlinear Models in R}
+\part{Overview of Generalized Nonlinear Models in R}
+
+\frame{\partpage}
+
+\section{Background theory}
+
+\frame{
+\frametitle{Linear models:}
+e.g.,
+\[
+E(y_i) = \beta_0 + \beta_1 x_i + \beta_2 z_i
+\]
+\pause
+\[
+E(y_i) = \beta_0 + \beta_1 x_i + \beta_2 x_i^2
+\]
+\pause
+\[
+E(y_i) = \beta_0 + \gamma_1\delta_1 x_i + \exp(\theta_2)z_i
+\]
+
+\pause
+In general:
+\[
+E(y_i) = \eta_i(\beta) = \hbox{linear function of unknown parameters}
+\]
+
+
+Also assumes variance essentially constant:
+\[
+\var(y_i) = \phi a_i
+\]
+with $a_i$ known (often $a_i\equiv 1$).
+}
+
+% \frame{
+% Interpretation of linear models: parameters are partial effects (partial derivatives).
+% For example,
+% \[
+% E(y_i) = \eta_i = \beta_0 + \beta_1 x_i + \beta_2 z_i
+% \]
+
+
+
+
+\frame{
+\frametitle{Generalized linear models}
+Problems with linear models in many applications:
+\begin{itemize}
+\item
+range of $y$ is restricted (e.g., $y$ is a count, or is binary, or is a duration)
+\item
+effects are not additive
+\item
+variance depends on mean (e.g., large mean $\implies$ large variance)
+\end{itemize}
+\pause
+\emph{Generalized} linear models specify a non-linear \emph{link function} and
+\emph{variance function} to allow for such things, while maintaining the
+simple interpretation of linear models.
+}
+
+\frame{
+Generalized linear model:
+\begin{align*}
+g[E(y_i)] &= \eta_i = \hbox{linear function of unknown parameters}\\
+\var(y_i) &= \phi a_i V(\mu_i)
+\end{align*}
+with the functions $g$ (link function) and $V$ (variance function) known.
+}
+
+\frame{
+Examples:
+\begin{itemize}
+\item
+binary logistic regressions
+\item
+rate models for event counts
+\item
+log-linear models for contingency tables (including multinomial logit models)
+\item
+multiplicative models for durations and other positive measurements
+\item
+hazard models for event history data
+\end{itemize}
+etc., etc.
+}
+
+
+\frame{
+e.g., binary logistic regression:
+
+\[
+y_i =
+\begin{cases}
+1 & \text{event happens}\\
+0 & \text{otherwise}
+\end{cases}
+\]
+
+\[
+\mu_i = E(y_i) = \hbox{probability that event happens}
+\]
+\pause
+\[
+\var(y_i) = \mu_i(1-\mu_i)
+\]
+
+\bigskip
+Variance is completely determined by mean.
+\pause
+
+\bigskip
+Common link functions are logit, probit, and (complementary) log-log, all of
+which transform constrained $\mu$ into unconstrained $\eta$.
+}
+
+
+\frame{
+e.g., multiplicative (i.e., log-linear) rate model for event counts.
+
+\bigskip
+`Exposure' for observation $i$ is a fixed, known quantity $t_i$.
+\pause
+
+Rate model:
+\[
+E(y_i) = t_i \exp(\beta_0)\exp(\beta_1 x_i)\exp(\beta_2 z_i)
+\]
+i.e.,
+\[
+\log  E(y_i) = \log t_i + \beta_0 + \beta_1 x_i + \beta_2 z_i
+\]
+--- effects are rate multipliers.
+\pause
+
+Variance is typically taken as the Poisson-like function $V(\mu) = \mu$
+(variance is equal to, or is proportional to, the mean).
+}
+
+\frame{
+Generalized linear: $\eta = g(\mu)$ is a linear function of the unknown
+parameters.  Variance depends on mean through $V(\mu)$.
+
+\bigskip
+Generalized \emph{nonlinear}: still have $g$ and $V$, but now relax the linearity assumption.
+
+\pause
+\bigskip\bigskip
+Many important aspects remain unchanged:
+\begin{itemize}
+\item
+fitting by maximum likelihood or quasi-likelihood
+\item
+analysis of deviance to assess significance of effects
+\item
+diagnostics based on residuals, etc.
+\end{itemize}
+
+But technically more difficult [essentially because $\partial\eta/\partial\beta = X$ becomes
+$\partial\eta/\partial\beta = X(\beta)$].
+}
+
+\frame{
+Some practical consequences of the technical difficulties:
+\begin{itemize}
+\item
+automatic detection and elimination of redundant parameters is very difficult
+--- it's no longer just a matter of linear algebra
+\item
+automatic generation of good starting values for ML fitting algorithms is hard
+\item
+great care is needed in cases where the likelihood has more than one maximum
+(which cannot happen in the linear case).
+\end{itemize}
+}
+
+\section{Structured interactions}
+
+\begin{frame}[fragile, label= independence]
+\frametitle{Some motivation: structured interactions}
+
+GNMs are not exclusively about structured interactions, but many applications
+are of this kind.
+
+A classic example is log-linear models for structurally-square contingency
+tables (e.g., pair studies, before-after studies, etc.).
+
+Pairs are classified twice, into row and column of a table of counts.
+
+The independence model is
+\[
+\log E(y_{rc}) = \theta + \beta_r + \gamma_c
+\]
+or with \Rpackage{glm}
+<<glm, eval = FALSE>>=
+glm(y ~ row + col, family = poisson)
+@
+\end{frame}
+
+\begin{frame}[fragile]
+Some standard (generalized linear) models for departure from independence are
+\begin{itemize}
+\item
+quasi-independence,
+<<quasiIndep, eval = FALSE>>=
+y ~ row + col + Diag(row, col)
+@
+\item
+quasi-symmetry,
+<<quasiSymm, eval = FALSE>>=
+y ~ row + col + Symm(row, col)
+@
+\item
+symmetry,
+<<Symm, eval = FALSE>>=
+y ~ Symm(row, col)
+@
+\end{itemize}
+Functions \Rfunction{Diag} and \Rfunction{Symm} are provided by the
+\Rpackage{gnm} package along with the function \Rfunction{Topo} for
+fully-specified \emph{topological} association structures, see \Robject{?Topo}.
+\end{frame}
+
+\begin{frame}[fragile, label = {RC}]
+\frametitle{Row-column association}
+The uniform association model (for ordered categories) has
+\[
+\log E(y_{rc}) = \beta_r + \gamma_c + \delta u_r v_c
+\]
+with the $u_r$ and $v_c$ defined as fixed, equally-spaced scores for the rows and columns.
+\pause
+
+A natural generalization is to allow the \emph{data} to determine the scores
+\citep{Good79a}. This can be done either heterogeneously,
+\[
+\log E(y_{rc}) = \beta_r + \gamma_c + \phi_r \psi_c
+\]
+or (in the case of a structurally square table) homogeneously,
+\[
+\log E(y_{rc}) = \beta_r + \gamma_c + \phi_r \phi_c
+\]
+These are generalized non-linear models.
+\end{frame}
+
+\section{Introduction to the gnm package}
+
+\begin{frame}[fragile]
+\frametitle{Introduction to the \Rpackage{gnm} package}
+
+The \Rpackage{gnm} package aims to provide a unified computing framework for
+specifying, fitting and criticizing generalized nonlinear models in R.
+
+\bigskip
+The central function is \Rfunction{gnm}, which is designed with the same interface as \Rfunction{glm}.
+
+Since generalized linear models are included as a special case, the
+\Rfunction{gnm} function can be used in place of \Rfunction{glm}, and will
+give equivalent results.
+
+For the special case $g(\mu) = \mu$ and $V(\mu) = 1$, the \Rfunction{gnm} fit is equivalent to an \Rfunction{nls} fit.
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Nonlinear model terms}
+
+Nonlinear model terms are specified in model formulae using functions of class
+\Rclass{nonlin}.
+
+These functions specify the term structure, possibly also labels and starting
+values.
+
+There are a number of \Rclass{nonlin} functions provided by
+\Rpackage{gnm}. Some of these specify basic mathematical functions of
+predictors, e.g. \Rfunction{Mult} and \Rfunction{Exp}.
+
+So heterogeneous row and column scores
+\[
+\phi_r \psi_c
+\]
+are specified as \Rcode{Mult(row, col)}.
+\end{frame}
+
+\begin{frame}[fragile, label = {MultHomog}]
+\frametitle{Specialized \Rclass{nonlin} functions}
+
+There are two specialized \Rclass{nonlin} functions provided by \Rpackage{gnm}
+
+\pause
+
+\Rfunction{MultHomog}: for homogeneous row and column scores, as in
+\[
+\phi_r\phi_c
+\]
+specified as \texttt{MultHomog(row, col)}
+
+\pause
+
+\Rfunction{Dref}: `diagonal reference' dependence on a square classification,
+\[
+       w_1 \gamma_r + w_2 \gamma_c
+\]
+\citep{Sobe81, Sobe85} specified as \texttt{Dref(row, col)}
+
+\pause
+
+Any (differentiable) nonlinear term can be specified by nesting existing
+\Rclass{nonlin} functions or writing a custom \Rclass{nonlin} function.
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Over-parameterization}
+
+The \Rfunction{gnm} function makes no attempt to remove redundant parameters
+from nonlinear terms.  This is deliberate.
+
+As a consequence, fitted models are typically represented in a way that is
+\emph{over-parameterized}: not all of the parameters are `estimable' (i.e.,
+`identifiable', `interpretable').
+
+\pause
+
+For example, for the RC model with homogeneous scores
+\begin{align*}
+\alpha_r + \beta_c + \phi_r\phi_c
+&= -k^2 +(\alpha_r - k\phi_r) + (\beta_c - k\phi_c) +
+(\phi_r + k)(\phi_c + k) \\
+&= \alpha^*_r + \beta^*_c + \phi^*_r\phi^*_c
+\end{align*}
+
+\pause
+
+\Rfunction{gnm} will return one of the infinitely many parameterizations at
+random.
+\end{frame}
+
+\section{Practical I}
+
+\begin{frame}
+    \frametitle{Practical I}
+1. Load the \Rpackage{gnm} package. This provides the \Robject{occupationalStatus} data set, which is a contingency table classified by the
+occupational status of fathers (\Robject{origin}) and their sons (\Robject{destination}).
+
+2. Use the generic function \Rfunction{plot} to create a mosaic plot of
+the table. Print \Robject{occupationalStatus} to see the cell frequencies
+represented by the plot.
+
+3. If a table is passed to the \Rfunarg{data} argument of \Rfunction{gnm}, it
+will be converted to a data frame with a column for each of the row and column
+factors and a column for the frequencies named \Robject{Freq}.
+
+Use \Rfunction{gnm} to fit an independence model to these data (see
+p\ref{independence}), assigning the result to a suitable name. Print this
+object.
+\end{frame}
+
+\begin{frame}
+%4. \Rclass{gnm} objects inherit from \Rclass{glm} and \Rclass{lm} objects,
+%i.e. the methods used by generic functions for \Rclass{gnm} objects may be the
+%same as, or based on, those for \Rclass{glm} and \Rclass{lm} objects. Type
+%\Rfunction{?plot} then hit \Robject{<tab>} to use auto-completion to find the
+%most relevant help on the \Rfunction{plot} function for \Rclass{gnm} objects.
+
+%From the help page, find out how to use \Rfunction{plot} to create a
+%plot of residuals vs.\ fitted values and do this for the null association
+%model. The poor fit should be very apparent!
+
+4. Type \Rcode{?plot.gnm} to open the help page on the \Rmethod{gnm} method
+for the \Rfunction{plot} function. Find out how to use \Rfunction{plot} to
+create a plot of residuals vs.\ fitted values and do this for the independence
+model. The poor fit should be very apparent!
+
+5. Load the \Rpackage{vcdExtra} package. This provides the generic function
+\Rfunction{mosaic}, which has a method for \Rclass{gnm} objects. Use this to
+visualize the goodness-of-fit of the independence model across the contingency
+table.
+
+6.  Fit a row-column association model with a homogeneous multiplicative
+interaction between origin and destination (see p\ref{RC},
+p\ref{MultHomog}). Check the fit with \Rfunction{mosaic}. Investigate the effect
+of modelling the diagonal elements separately, by adding \Rcode{Diag(origin,
+  destination)}.
+\end{frame}
+
+\begin{frame}
+7. Keeping the \Rcode{Diag} term in the model, use \Rfunction{coef} to access
+the coefficients and assign the result. Re-run the model fit and assign the
+coefficients of the re-fitted model to another name. Compare the coefficients
+side-by-side using \Rfunction{cbind}. Which parameters have been automatically
+constrained to zero? Which coefficients are the same in both models?
+
+8. Standard errors can only be obtained for estimable parameters. Use
+\Rfunction{summary} to confirm which parameters are estimable in the current
+model. The homogeneous scores can be identified by setting one of them to
+zero. Re-fit the model using the argument \Rfunarg{constrain}\Rcode{ =
+  }\Rclass{MultHomog(origin, destination)1}. Compare the summary of the constrained
+model to the summary of the unconstrained model.
+\end{frame}
+
+\title{Further Examples of Generalized Nonlinear Models}
+\part{Further Examples of Generalized Nonlinear Models}
+
+\frame{\partpage}
+
+\section{RC Model with Heterogeneous Scores}
+
+\begin{frame}{RC Model with Heterogeneous Scores}
+In this case, for example,
+\begin{align*}
+  \alpha_r + \beta_c + \phi_r\psi_c &= \alpha_r + (\beta_r - \psi_c) + (\phi_r
+  + 1)\psi_c\\
+&= \alpha_r + \beta_c + (2\phi_r)(\psi_c/2)
+\end{align*}
+so we need to constrain both the location and scale.
+
+\pause
+A standard convention is to constrain the scores so that
+\begin{align*}
+  \sum_r \phi_r\pi_r &= \sum_c \psi_c\pi_c = 0\\
+\text{and } \sum_r \phi_r^2\pi_r &= \sum_c \psi_c^2\pi_c =  1
+\end{align*}
+where $\pi_r$ and $\pi_c$ are the row and column probabilities respectively. The
+full interaction is then given by $\sigma\phi_{r}\psi_{c}$, where $\sigma > 0$
+is the \emph{intrinsic association parameter}.
+\end{frame}
+
+\begin{frame}[fragile]{Example: Mental Health Data}
+1660 residents of Manhattan cross-classified by child's
+mental impairment and parents' socioeconomic status \citep{Agre13}.
+<<mentalHealth>>=
+xtabs(count ~ SES + MHS, mentalHealth)
+@
+
+\pause
+We require treatment contrasts for the RC(1) model
+<<trtContr>>=
+mentalHealth$MHS <- C(mentalHealth$MHS, treatment)
+mentalHealth$SES <- C(mentalHealth$SES, treatment)
+@
+\end{frame}
+
+\begin{frame}[fragile]
+We fit the RC(1) using the \Rfunarg{ofInterest} argument to specify that only the
+parameters of the multiplicative interaction should be shown in model
+summaries.
+<<RC>>=
+RC <- gnm(count ~ SES + MHS + Mult(SES, MHS), family = poisson,
+          data = mentalHealth, verbose = FALSE, ofInterest = "Mult")
+coef(RC)
+@
+\end{frame}
+
+\begin{frame}[fragile]
+The constraints that the weighted sum of column scores should sum to zero and
+the weighted sum of squares should sum to one are met by the scaled contrasts
+\begin{equation*}
+    \frac{\psi_c - \sum_c \psi_c\pi_c}{
+      \sqrt{\sum_c \pi_c(\psi_c - \sum_c\psi_c\pi_c)^2}}
+\end{equation*}
+\pause
+These contrasts can be obtained with \Rfunction{getContrasts} as follows:
+<<colScores>>=
+colProbs <- with(mentalHealth, tapply(count, MHS, sum) / sum(count))
+colScores <- getContrasts(RC, pickCoef(RC, "[.]MHS"), ref = colProbs,
+                          scaleRef = colProbs, scaleWeights = colProbs)
+colScores
+@
+\end{frame}
+
+\begin{frame}[fragile]
+    The row scores are computed in a similar way
+<<rowScores>>=
+rowProbs <- with(mentalHealth, tapply(count, SES, sum) / sum(count))
+rowScores <- getContrasts(RC, pickCoef(RC, "[.]SES"), ref = rowProbs,
+                          scaleRef = rowProbs, scaleWeights = rowProbs)
+@
+
+\pause
+Then the intrinsic association parameter can be computed directly
+<<assoc>>=
+phi <- pickCoef(RC, "[.]SES", value = TRUE)
+psi <- pickCoef(RC, "[.]MHS", value = TRUE)
+sqrt(sum(rowProbs*(phi - sum(rowProbs*phi))^2)) *
+         sqrt(sum(colProbs*(psi - sum(colProbs*psi))^2))
+
+@
+
+\pause
+Since this value depends on the particular scaling used for the contrasts, it
+typically not of interest to conduct inference on this parameter directly. The
+standard error could be obtained, if desired, via the delta method.
+\end{frame}
+
+\section{Further Multiplicative Models}
+
+\begin{frame}{Other Association Models}
+The row-column association models introduced so far are special cases of
+the RC(M) model:
+\[
+\log(\mu_{rc}) = \alpha_r + \beta_c + \sum_{k=1}^K \sigma_k\phi_{kr}\psi_{kc},
+\]
+Further association models include
+\begin{itemize}
+\item Models with skew-symmetric terms
+\item RC(M)-L models and UNIDIFF models for three-way tables
+\end{itemize}
+The \textbf{logmult} package enhances \textbf{gnm} by providing functions to
+support analyses involving log-multiplicative models.
+\end{frame}
+
+\begin{frame}{Other Multiplicative Models}
+
+Several models with multiplicative terms have been proposed outside of
+the context of association modelling.
+
+Prominent examples include
+\begin{itemize}
+\item
+the stereotype model \citep{Ande84}, for ordered categorical response
+\item
+certain Rasch models, for item responses
+\item
+the Lee-Carter model \citep{LeeCart92} for mortality data
+\end{itemize}
+
+\pause
+In some cases the multiplicative term provides a simpler, more interpretable
+structure, whilst in other cases it provides a simple extension to a more
+flexible model.
+
+\end{frame}
+
+\begin{frame}{Other Multiplicative Models}
+
+Several models with multiplicative terms have been proposed outside of
+the context of association modelling.
+
+Prominent examples include
+\begin{itemize}
+\item
+the stereotype model \citep{Ande84}, for ordered categorical response
+\item
+certain Rasch models, for item responses
+\item
+the Lee-Carter model \citep{LeeCart92} for mortality data
+\end{itemize}
+
+\pause
+In some cases the multiplicative term provides a simpler, more interpretable
+structure, whilst in other cases it provides a simple extension to a more
+flexible model.
+
+\end{frame}
+
+\section{Diagonal Reference Model}
+
+\begin{frame}{Diagonal Reference Terms}
+    Diagonal reference terms model the effect of factors with common levels. For
+    factors indexed by $i(f)$, the term is defined as
+\[
+\sum_f w_f\gamma_{i(f)}
+\]
+where $w_f$ is a weight for factor $f$ and $\gamma_l$ is the \emph{diagonal
+effect} for level $l$.
+
+Unlike the GNMs models considered so far, which structure interaction terms,
+this structures the main effects of the corresponding factors.
+
+\Rfunction{Dref} constrains the weights to be non-negative and to sum to one by
+defining them as
+\[
+w_f = \frac{e^{\delta_f}}{\sum_i e^{\delta_i}}
+\]
+\end{frame}
+
+\begin{frame}{Example: Conformity to parental rules}
+
+Data from a study of the value that parents place on their children conforming
+to their rules \citet{Vand02}.
+
+Covariates are education level of mother and of father (MOPLM, FOPLF) plus 5 others.
+
+Basic diagonal reference model for mother's conformity score (MCFM):
+\[
+E(y_{rc}) = \beta_1x_1 + \beta_2x_2 + \beta_3x_3 +\beta_4x_4 +\beta_5x_5 +
+\frac{e^{\delta_1}}{e^{\delta_1} + e^{\delta_2}}\gamma_r +
+\frac{e^{\delta_2}}{e^{\delta_1} + e^{\delta_2}}\gamma_c
+\]
+\end{frame}
+
+\begin{frame}[fragile, label = {Dref}]
+<<conformity, echo = FALSE>>=
+conformity <- read.table("/media/veracrypt1/Work/Repos/CRAN/gnm-svn/DataSets/Van_der_Slik/conformity.txt",
+                         colClasses = c("character", "numeric", "numeric",
+                         "factor", "factor", rep("numeric", 6)))
+@
+<<A>>=
+A <- gnm(MCFM ~ -1 +
+             AGEM + MRMM + FRMF + MWORK + MFCM + Dref(MOPLM, FOPLF),
+           family = gaussian, data = conformity, verbose = FALSE)
+@
+In order for the diagonal weights to be identified, one of the $\delta_f$ must be
+constrained to zero. \Rfunction{DrefWeights} computes the weights $w_f$,
+re-fitting the model constraining $\delta_1 = 0$ if necessary:
+<<w, message = FALSE>>=
+w <- DrefWeights(A)
+w
+@
+\end{frame}
+
+\begin{frame}[fragile]{Inference on the Weights}
+    If the diagonal weights are near to $0.5$, then a Normal approximation
+    can be use to obtain a confidence interval, e.g.
+<<wCI>>=
+w$MOPLM["weight"] + qnorm(c(0.025, 0.975)) * w$MOPLM["se"]
+@
+\pause
+Since $0 < w_f < 1$, a t-test is not a valid test of $H_0: w_1 = 0$. Instead use
+ \Rfunction{anova} to compare against the implied GLM, e.g.
+<<A2, echo = FALSE>>=
+A2 <- update(A, . ~ -1 +  AGEM + MRMM + FRMF + MWORK + MFCM + FOPLF)
+anova(A2, A, test = "Chisq")
+@
+\end{frame}
+
+\begin{frame}[fragile]
+    The \Rfunction{Dref} function allows dependence of the weights on other
+    variables.
+
+\citet{Vand02} consider weights dependent upon mother's conflict score (MFCM), as in
+\[
+   \delta_k = \xi_k + \phi_k x_5\qquad(k=1,2)
+\]
+which can be specified in R as
+<<F>>=
+F <- gnm(MCFM ~ -1 + AGEM + MRMM + FRMF + MWORK + MFCM +
+          Dref(MOPLM, FOPLF, delta = ~ 1 + MFCM),
+          family = gaussian, data = conformity, verbose = FALSE)
+@
+\end{frame}
+
+\begin{frame}[fragile]
+    In this case there are two sets of weights, one for when the mother's
+    conflict score is less than average (coded as zero) and one for when the
+    score is greater than average (coded as one).
+<<wF, message = FALSE>>=
+DrefWeights(F)
+@
+\end{frame}
+
+\section{Custom Nonlinear Terms}
+
+\begin{frame}{Custom \Rclass{nonlin} Functions}
+    A \Rclass{"nonlin"} function creates a list of arguments for the internal
+    function \Rfunction{nonlinTerms}.
+
+    The term is viewed as a function of
+    \begin{description}
+    \item[predictors] linear predictors with coefficients to be estimated,
+        including the special case of single parameters
+    \item[variables] variables included in the term with a coefficient of 1
+    \end{description}
+\end{frame}
+
+\begin{frame}{Example: Modelling Prey Consumption}
+    A ecology student wished to use the Holling Type II function to model the
+    number of prey eaten by a certain predator in a given time period:
+\[
+y(x) = \frac{ax}{1 + ahx}
+\]
+where $x$ is the number of prey at the start of the experiment, $a$ is the
+attack rate and $h$ is the time the predator spends handling the prey.
+
+\pause
+In addition, she wished to allow the parameters to depend on a factor specifying
+the catchment.
+
+We consider the simpler model first.
+\end{frame}
+
+\begin{frame}[fragile]
+    The model can be broken down into {\color{beamerstructure}predictors} and
+    {\color{ForestGreen}variables} as follows
+    \begin{equation*}
+      \frac{{\color{beamerstructure}a}{\color{ForestGreen}x}}{
+        1 + {\{\color{beamerstructure}a\}}{\{\color{beamerstructure}h\}}{\color{ForestGreen}x}}
+    \end{equation*}
+    We start to build our \Rfunction{nonlin} function as follows:
+<<TypeII>>=
+TypeII <- function(x){
+  list(predictors = list(a = 1, h = 1),
+       variables = list(substitute(x)))
+}
+class(TypeII) <- "nonlin"
+@
+\end{frame}
+
+\begin{frame}[fragile]
+    The \Rfunarg{term} argument of \Rfunction{nonlinTerms} takes labels for
+    the predictors and variables and returns a deparsed expression of the
+    term:
+<<paste0>>=
+term = function(predLabels, varLabels){
+    paste0(predLabels[1], "*", varLabels[1], "/(1 + ",
+           predLabels[1], "*", predLabels[2], "*", varLabels[1], ")")
+}
+term(c("a", "h"), "x")
+@
+Or using \Rfunction{sprintf}
+<<sprintf>>=
+term = function(predLabels, varLabels){
+    sprintf("%s * %s / (1 + %s * %s * %s)",
+            predLabels[1], varLabels[1],
+            predLabels[1], predLabels[2], varLabels[1])
+}
+@
+\end{frame}
+
+\begin{frame}[fragile]{Complete Function}
+<<nonlin>>=
+TypeII <- function(x){
+  list(predictors = list(a = 1, h = 1),
+       variables = list(substitute(x)),
+       term = function(predLabels, varLabels){
+           sprintf("%s * %s / (1 + %s * %s * %s)",
+                   predLabels[1], varLabels[1],
+                   predLabels[1], predLabels[2], varLabels[1])
+})
+}
+class(TypeII) <- "nonlin"
+@
+\end{frame}
+
+\begin{frame}[fragile]
+Some test data were provided:
+<<prey>>=
+Density <- rep(c(2,5,10,15,20,30), each = 4)
+Eaten <- c(1,1,0,0,2,2,1,1,1,2,3,2,2,2,3,3,3,3,4,3,3,3,4,3)
+@
+The counts are expected to be underdispersed so we use the
+\Rfunction{quasipoisson} family with \Rcode{link = "identity"}. Both $a$ and $h$
+should be positive, so we provide starting values
+<<mod1>>=
+mod1 <- gnm(Eaten ~ -1 + TypeII(Density), start = c(a = 0.1, h = 0.1),
+            family = quasipoisson(link = "identity"))
+@
+\end{frame}
+
+\begin{frame}[fragile]
+<<mod1Summary, echo = FALSE>>=
+summary(mod1)
+@
+\end{frame}
+
+\begin{frame}[fragile]{Incorporating dependence}
+    The parameters $a$ and $h$ can be allowed to depend on a factor as follows
+<<factor>>=
+TypeII <- function(C, x){
+  list(predictors = list(a = substitute(C), h = substitute(C)),
+       variables = list(substitute(x)),
+       term = function(predLabels, varLabels){
+           sprintf("%s * %s / (1 + %s * %s * %s)",
+                   predLabels[1], varLabels[1],
+                   predLabels[1], predLabels[2], varLabels[1])
+})
+}
+class(TypeII) <- "nonlin"
+@
+
+\end{frame}
+
+\begin{frame}[fragile]
+<<factorResult>>=
+Catchment <- factor(rep(1:2, 6, each = 2))
+mod2 <- gnm(Eaten ~ -1 + TypeII(Catchment, Density),
+            start = rep(0.2, 4),
+            family = quasipoisson(link = "identity"))
+coef(mod2)
+@
+\end{frame}
+
+\begin{frame}[fragile]
+    If instead we wanted to allow a general predictor to be supplied by the user
+    as a formula we would use
+<<formula>>=
+TypeII <- function(f, x){
+  list(predictors = list(a = f, h = f),
+       variables = list(substitute(x)),
+       term = function(predLabels, varLabels){
+           sprintf("(%s) * (%s)/ (1 + (%s) * (%s) * %s)",
+                   predLabels[1], varLabels[1],
+                   predLabels[1], predLabels[2], varLabels[1])
+})
+}
+class(TypeII) <- "nonlin"
+@
+Note additional parentheses!
+\end{frame}
+
+\begin{frame}[fragile]
+<<formulaResult>>=
+mod2 <- gnm(Eaten ~ -1 + TypeII(~ 1 + Catchment, Density),
+            start = c(0.2, -0.1, 0.2, -0.1),
+            family = quasipoisson(link = "identity"))
+coef(mod2)
+@
+\end{frame}
+
+\section{Practical II}
+
+\begin{frame}[fragile]{Practical IIa}
+1. The \Robject{voting} data in \Rfunction{gnm} are from the 1987 British general election. The
+data frame comprises the percentage voting Labour (\Robject{percentage}), the
+total number of people (\Robject{total}), the class of the head of household
+(\Robject{destination}) and the class of their father (\Robject{origin}). We
+shall fit a diagonal reference model to these data.
+
+First we want to convert \Robject{percentage} into a binomial response. So that
+\Rfunction{gnm} will automatically weight the proportion of successes by the
+group size, we choose to do this by creating a two-column matrix with the
+columns giving the number of households voting Labour ('success') and the number
+of households voting otherwise ('failure'):
+<<binomial, eval = FALSE>>=
+count <- with(voting, percentage/100 * total)
+yvar <- cbind(count, voting$total - count)
+@
+\end{frame}
+
+\begin{frame}[fragile]
+2. Use \Rfunction{gnm} to model \Robject{yvar} by a diagonal reference term
+based on \Robject{origin} and \Robject{destination} (see p\ref{Dref}), with
+\Rfunarg{family}\Rcode{ = binomial}. Look at the summary - does the model fit well? Use
+the \Rfunction{mosaic} function from \Rpackage{vcdExtra} to examine the
+residuals over the \Robject{origin} by \Robject{destination} table. Since the
+data were not provided to \Rfunction{gnm} as a table, you will need to provide a
+formula with the cross-classifying factors.
+
+3. It could be that the
+diagonal weights should be different for the upwardly mobile. Define a variable
+to indicate this group as follows:
+<<upward, eval = FALSE>>=
+origin <- as.numeric(as.character(voting$origin))
+destination <- as.numeric(as.character(voting$destination))
+upward <- origin > destination
+@
+Using this variable, refit the diagonal reference model to have separate weights
+for the upwardly and downwardly mobile (note the stable are modelled by the
+diagonal effects). Do the weights differ between the two groups?
+\end{frame}
+
+\begin{frame}[fragile]
+4.  It could be that individuals which have come into or out of the salariat
+(class 1) vote differently from other individuals. Define variables indicating
+movement in and out of class 1 as follows:
+<<inOut, eval = FALSE>>=
+in1 <- origin != 1 & destination == 1
+out1 <- origin == 1 & destination != 1
+@
+Re-fit the diagonal reference model, specifying \Rcode{{\mytilde} 1 + in1 + out1} as the
+\Rfunarg{formula} argument of \Rfunction{Dref}, so the weights are
+parameterized by a main effect with additional effects for \Rcode{in1} and
+\Rcode{out1}.
+
+5.  Evaluate the weights under the new model. The weights for groups that have
+moved in to the salariat are similar to the general weights. Fit a model that
+only has separate weights for the groups moving out of the salariat. Is this
+model a significant improvement on the standard diagonal reference model?
+\end{frame}
+
+\begin{frame}{Practical IIb}
+1. The generalized logistic function or Richard's curve is defined as
+\[
+y(t) = A + \frac{K - A}{\left(1 + \exp(-B(t - M)\right)^{1/v}}
+\]
+where
+\begin{description}
+\item[A] is the lower asymptote
+\item[K] is the upper asymptote
+\item[B] is the growth rate
+\item[v] affects near which asymptote the growth rate is at its maximum
+\item[M] is the time at which the growth rate is at its maximum
+%% is this EC50??
+\end{description}
+Create a custom \Rclass{"nonlin"} function to fit this model.
+\end{frame}
+
+\begin{frame}
+2. Some test data are provided in the file \Rcode{Richard.txt} in the data folder of the course materials. Plot \Robject{y}
+against \Robject{t}. Since \Robject{y} decreases as \Robject{t} increases (i.e.\
+the growth rate is negative) the upper asymptote is the value as $t \to
+-\infty$ and the lower asymptote is the value as $t \to \infty$. Given that if $v
+= 1$, $M$ is the value of $t$ at which $y$ is half-way between the lower and
+upper asymptotes, make reasonable guesses for starting values of $A$, $K$, $B$,
+$v$ and $M$. Use \Rfunction{gnm} to fit the Richard's curve to these data, with
+\Rfunarg{family}\Rcode{ = gaussian} and \Rfunarg{start} set to your guessed values. Note
+the starting values must be in the same order as specified by the
+\Rcode{predictors} element of your \Rclass{nonlin} term.
+\end{frame}
+
+\begin{frame}
+3. Add the fitted line to your plot. Does the model fit well? Look at the
+summary for your fitted model. Are all the parameters significant? Investigate
+whether one or more of the following simplifications is reasonable:
+\begin{itemize}
+\item $v = 1$
+\item $A = 0$
+\item $K = 100$
+\end{itemize}
+\end{frame}
+
+\appendix
+
+\section{Concluding Remarks}
+
+\begin{frame}{Concluding Remarks}
+Many frequently-used GNMs can be handled by \Rfunction{gnm} and convenience
+functions for association models are available in \Rpackage{logmult}.
+
+Other examples in the \Rpackage{gnm} vignette/documentation include
+\begin{itemize}
+\item GAMMI models (RC(M) models for a general response)
+\item biplot models for two-way data
+\item compound exponential decay curves
+\item double UNIDIFF model for 4-way table \Rcode{?cautres}
+\end{itemize}
+
+Formula interface to \Rfunction{gnm} encourages experimentation and uninhibited
+modelling.
+\end{frame}
+
+\section{References}
+
+
+\begin{frame}[allowframebreaks]
+\small
+\def\newblock{}
+\bibliography{gnm}{}
+\bibliographystyle{jss}
+\end{frame}
+
+\end{document}
+
+
