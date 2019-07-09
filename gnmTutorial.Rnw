@@ -383,7 +383,7 @@ The uniform association model (for ordered categories) has
 with the $u_r$ and $v_c$ defined as fixed, equally-spaced scores for the rows and columns.
 \pause
 
-A natural generalization is to allow the \emph{data} to determine the scores
+The row-column association (RC) model lets the \emph{data} determine the scores
 \citep{Good79a}. This can be done either heterogeneously,
 \[
 \log E(y_{rc}) = \beta_r + \gamma_c + \phi_r \psi_c
@@ -584,7 +584,7 @@ xtabs(count ~ SES + MHS, mentalHealth)
 @
 
 \pause
-We require treatment contrasts for the RC(1) model
+We require treatment contrasts for the RC model
 <<trtContr>>=
 mentalHealth$MHS <- C(mentalHealth$MHS, treatment)
 mentalHealth$SES <- C(mentalHealth$SES, treatment)
@@ -592,7 +592,7 @@ mentalHealth$SES <- C(mentalHealth$SES, treatment)
 \end{frame}
 
 \begin{frame}[fragile]
-We fit the RC(1) using the \Rfunarg{ofInterest} argument to specify that only the
+We fit the RC model using the \Rfunarg{ofInterest} argument to specify that only the
 parameters of the multiplicative interaction should be shown in model
 summaries.
 <<RC>>=
@@ -939,7 +939,7 @@ TypeII <- function(f, x){
   list(predictors = list(a = f, h = f),
        variables = list(substitute(x)),
        term = function(predLabels, varLabels){
-           sprintf("(%s) * (%s)/ (1 + (%s) * (%s) * %s)",
+           sprintf("(%s) * %s/ (1 + (%s) * (%s) * %s)",
                    predLabels[1], varLabels[1],
                    predLabels[1], predLabels[2], varLabels[1])
 })
